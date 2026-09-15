@@ -1,4 +1,4 @@
-# Distrobox-AI-Vibe-Coding-Sandbox-Provisioning-Specification
+# Distrobox AI Vibe Coding Sandbox Provisioning Specification
 
 This is the infrastructure specification to anchor a local LLM compute daemon in the background by passing through AMD hardware acceleration (RDNA 3.5 / RDNA 4) 100% into an Ubuntu 24.04 LTS container, achieving Zero-Pollution on the host OS's package libraries and home directory.
 
@@ -23,7 +23,9 @@ distrobox create --image docker.io/library/ubuntu:24.04 \
   --name ai-core \
   --home ~/distrobox_homes/ai_core \
   --additional-flags "--device /dev/kfd --device /dev/dri" -Y
-Step 2. Container Internal Runtime Lock-in (Ubuntu)
+```
+### Step 2. Container Internal Runtime Lock-in (Ubuntu)
+```fish
 # Enter the sandbox
 distrobox enter ai-core
 (Execute inside the container)
@@ -39,13 +41,15 @@ set -Ux HSA_OVERRIDE_GFX_VERSION 11.0.0
 set -Ux OLLAMA_IGPU_ENABLE 1
 
 # Download and install Ollama binary toolchain
-curl -fsSL [https://ollama.com/install.sh](https://ollama.com/install.sh) | sh
+curl -fsSL https://ollama.com/install.sh | sh
 
 # Exit session and return to CachyOS host
 exit
 exit
-Step 3. GNOME Autostart Background Daemonization
+```
+### Step 3. GNOME Autostart Background Daemonization
 After returning to the host (CachyOS), execute the script below to lock in the AI daemon to automatically ignite upon GNOME login.
+```fish
 # Allocate global execution binary and autostart directories
 mkdir -p ~/.local/bin ~/.config/autostart
 
@@ -56,12 +60,13 @@ chmod +x ~/.local/bin/wake-ai
 # Write desktop autostart entry 
 printf '[Desktop Entry]\nType=Application\nName=Ollama Distrobox Server\nComment=Start Ollama with AMD ROCm in background via Podman Detach\nExec=/bin/bash -c "$HOME/.local/bin/wake-ai"\nTerminal=false\nStartupNotify=false\n' > ~/.config/autostart/ollama-ai.desktop
 chmod +x ~/.config/autostart/ollama-ai.desktop
+```
+## 2. Fedora Workstation (Bash Shell + Systemd) Target Pipeline
 
-##2. Fedora Workstation (Bash Shell + Systemd) Target Pipeline
 A standard pipeline that eliminates Python virtual environment (venv) collision risks by integrating the RedHat ecosystem's standard Bash shell and Systemd user services.
-
-Step 1. Core Engine Injection & Sandbox One-Shot Build
-# Inject core engines
+### Step 1. Core Engine Injection & Sandbox One-Shot Build
+```bash
+#Inject core engines
 sudo dnf install podman distrobox -y
 
 # Allocate an isolated home directory
@@ -72,9 +77,14 @@ distrobox create --image docker.io/library/ubuntu:24.04 \
   --name ai-core \
   --home ~/distrobox_homes/ai_core \
   --additional-flags "--device /dev/kfd --device /dev/dri" -Y
-Step 2. Container Internal Runtime Lock-in (Ubuntu)
+```
+### Step 2. Container Internal Runtime Lock-in (Ubuntu)
+```bash
 # Enter the sandbox
 distrobox enter ai-core
+```
+(Execute inside the container)
+```bash
 # Sync packages and inject essential tools
 sudo apt update && sudo apt install curl wget git python3-venv python3-pip zstd -y
 
@@ -83,12 +93,14 @@ echo 'export HSA_OVERRIDE_GFX_VERSION=12.0.1' >> ~/.bashrc
 source ~/.bashrc
 
 # Download and install Ollama engine
-curl -fsSL [https://ollama.com/install.sh](https://ollama.com/install.sh) | sh
+curl -fsSL https://ollama.com/install.sh | sh
 
 # Return to host OS
 exit
-Step 3. Systemd Linger Background Daemonization
+```
+### Step 3. Systemd Linger Background Daemonization
 After returning to the host (Fedora), compile a script that strikes the daemon directly with the OCI API and lock it as a Systemd unit.
+```bash
 # Compile global wrapper script
 mkdir -p ~/.local/bin
 cat <<'EOF' > ~/.local/bin/wake-ai
@@ -120,8 +132,10 @@ EOF
 systemctl --user daemon-reload
 systemctl --user enable --now ai-core.service
 loginctl enable-linger $USER
-3. Dead Layer & Weights Incineration Protocol (Maintenance)
+```
+## 3. Dead Layer & Weights Incineration Protocol (Maintenance)
 Maintenance commands to completely destroy all containers and caches to 0 bytes in the event of a runtime environment collapse. (Downloaded LLM model weights will also be bulk deleted).
+```bash
 # Force remove container instances
 distrobox rm -f ai-core
 
@@ -130,3 +144,4 @@ rm -rf ~/distrobox_homes
 
 # Completely delete stopped container fragments and unused image caches
 podman system prune -a -f
+```
