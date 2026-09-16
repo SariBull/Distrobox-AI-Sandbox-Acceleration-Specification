@@ -1,4 +1,4 @@
-# Distrobox AI Sandbox Provisioning Specification
+# Distrobox AI Sandbox Acceleration Specification
 
 > Zero-Pollution AMD Hardware Acceleration Passthrough for Ubuntu 24.04 LTS Containers.
 
