@@ -1,14 +1,25 @@
 # Distrobox AI Vibe Coding Sandbox Provisioning Specification
 
-This is the infrastructure specification to anchor a local LLM compute daemon in the background by passing through AMD hardware acceleration (RDNA 3.5 / RDNA 4) 100% into an Ubuntu 24.04 LTS container, achieving Zero-Pollution on the host OS's package libraries and home directory.
+> Zero-Pollution AMD Hardware Acceleration Passthrough for Ubuntu 24.04 LTS Containers.
 
-Depending on the host system's default shell (Fish vs. Bash), syntax conflicts (e.g., Here-Doc parsing errors, venv collapses) may occur. Strictly execute **only one** of the following pipelines that matches your target environment.
+This specification isolates the local LLM runtime (Ollama) inside an OCI container while passing through bare-metal AMD GPU acceleration (`/dev/kfd`, `/dev/dri`), preventing host package pollution and Python dependency collisions.
 
 ---
 
-## 1. CachyOS (Fish Shell + GNOME) Target Pipeline
+## Hardware & Environment Mapping
 
-To prevent non-standard syntax conflicts from Fish (the default shell for Arch-based variants), all multi-line scripts are compiled using the `printf` syntax.
+| Pipeline Target | Host OS | Default Shell | Hardware Architecture | Target Device | Overridden GFX |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Pipeline 1** | CachyOS | Fish | AMD RDNA 3.5 (APU) | Ryzen AI Max+ 395 (Radeon 8060S) | `11.0.0` (`iGPU=1`) |
+| **Pipeline 2** | Fedora 44 | Bash | AMD RDNA 4 (dGPU) | Ryzen 7 9800X3D + Radeon RX 9070 XT | `12.0.1` |
+
+Strictly execute **only one** pipeline matching your target platform.
+
+---
+
+## 1. CachyOS (Fish Shell) Target: AMD Strix Halo (RDNA 3.5)
+
+Optimized for mobile edge nodes (e.g., ROG Flow Z13) equipped with AMD Ryzen AI Max+ 395. Addresses Fish shell Here-Doc syntax incompatibilities via `printf` pipelines and activates the unified memory iGPU flag.
 
 ### Step 1. Core Engine Injection & Sandbox One-Shot Build
 ```fish
@@ -61,9 +72,10 @@ chmod +x ~/.local/bin/wake-ai
 printf '[Desktop Entry]\nType=Application\nName=Ollama Distrobox Server\nComment=Start Ollama with AMD ROCm in background via Podman Detach\nExec=/bin/bash -c "$HOME/.local/bin/wake-ai"\nTerminal=false\nStartupNotify=false\n' > ~/.config/autostart/ollama-ai.desktop
 chmod +x ~/.config/autostart/ollama-ai.desktop
 ```
-## 2. Fedora Workstation (Bash Shell + Systemd) Target Pipeline
+## 2. Fedora Workstation (Bash Shell) Target: 9800X3D + RX 9070 XT (RDNA 4)
 
-A standard pipeline that eliminates Python virtual environment (venv) collision risks by integrating the RedHat ecosystem's standard Bash shell and Systemd user services.
+Optimized for high-end desktop workstations running Fedora 44. Standardizes on Bash and Systemd User Services to ensure seamless integration and avoid Python virtual environment (venv) breakage.
+
 ### Step 1. Core Engine Injection & Sandbox One-Shot Build
 ```bash
 #Inject core engines
